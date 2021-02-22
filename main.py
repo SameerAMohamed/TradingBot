@@ -49,7 +49,7 @@ while 1 == 1:
     is_market_open = clock.is_open
     while is_market_open == True:  # Changed to False for after-hours testing
         try:
-            # Find out what time close will happen - CALL CLOCK FEWER TIMES
+            # Find out what time close will happen
             end_timer = time.time()
             if runcount == 0 or runcount == 1:
                 clock = api.get_clock()
@@ -72,10 +72,8 @@ while 1 == 1:
             start_time = time.time()
             us_trends = requests.get(endpoint, headers=headers).json()
             us_trends = us_trends[0]
-            # us_trends['trends'][25]['name'] = 'Google'#Use this for testing ttttesting
             stop_words = stopwords.words('english')
 
-            # commonNamesList[1][0] = 'Happy'#USE THIS FOR TESTING. DELETE LATER
             counter = 0
             counterMeasure = 0
             index = 0

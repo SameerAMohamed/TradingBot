@@ -13,16 +13,15 @@ from sentiment import execute_sentiment, sentiment_analysis
 runcount = 1
 # while market_open == True:
 # twitter authentication
-key = 'DH33Fyb6sSslFzV2zEbuHiKLn'
-keySecret = 'Qw5i5xzDAMgnN4O1nSg58jMFKgk03CTfaKLoP648po1VsE4U8X'
-bearerToken = 'AAAAAAAAAAAAAAAAAAAAAAVVIwEAAAAAv1Nr3WPg%2BkPaHNusA9Xgj1CGuig' \
-              '%3DT6fqiFJchskx3gJnmAnSr9TLig4CbjvCvvQTZKJKLpNvwbuO7r '
+key = '' // Removed for security
+keySecret = '' // Removed for security
+bearerToken = '' // Removed for security
 auth = bearerToken
 currentTime = time.time()
 # Authentication stuff for Alpaca
 base_endpoint = 'https://paper-api.alpaca.markets'
-api_key_id = 'PKKSZY7HUXSG54X8GV2Q'
-secret_key = 'WdqcOFVTPoPYxzzV0q8UW76ad0rpcjfz0vEucaj5'
+api_key_id = '' // Removed for security
+secret_key = '' // Removed for security
 
 api = tradeapi.REST(api_key_id, secret_key, base_url=base_endpoint)  # or use ENV Vars shown below
 account = api.get_account()

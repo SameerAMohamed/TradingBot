@@ -5,9 +5,9 @@ import math
 
 class order_stuff:
     def __init__(self):
-        API_KEY = 'PKKSZY7HUXSG54X8GV2Q'
-        API_SECRET = 'WdqcOFVTPoPYxzzV0q8UW76ad0rpcjfz0vEucaj5'
-        APCA_API_BASE_URL = 'https://paper-api.alpaca.markets'
+        API_KEY = '' // Removed for security
+        API_SECRET = '' // Removed for security
+        APCA_API_BASE_URL = '' // Removed for security
         self.alpaca = tradeapi.REST(API_KEY, API_SECRET, APCA_API_BASE_URL, 'v2')
 
         self.long = []

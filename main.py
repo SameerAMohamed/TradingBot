@@ -3,6 +3,7 @@ import time
 
 import alpaca_trade_api as tradeapi
 import pandas as pd
+import sqlite3
 import regex as re
 import requests
 from nltk.corpus import stopwords
@@ -10,20 +11,21 @@ from nltk.corpus import stopwords
 from methodsFile import order_stuff
 from sentiment import execute_sentiment, sentiment_analysis
 
+
 runcount = 1
-# while market_open == True:
 # twitter authentication
-key = '' // Removed for security
-keySecret = '' // Removed for security
-bearerToken = '' // Removed for security
+key = 'DH33Fyb6sSslFzV2zEbuHiKLn'
+keySecret = 'Qw5i5xzDAMgnN4O1nSg58jMFKgk03CTfaKLoP648po1VsE4U8X'
+bearerToken = 'AAAAAAAAAAAAAAAAAAAAAAVVIwEAAAAAv1Nr3WPg%2BkPaHNusA9Xgj1CGuig' \
+              '%3DT6fqiFJchskx3gJnmAnSr9TLig4CbjvCvvQTZKJKLpNvwbuO7r '
 auth = bearerToken
 currentTime = time.time()
 # Authentication stuff for Alpaca
 base_endpoint = 'https://paper-api.alpaca.markets'
-api_key_id = '' // Removed for security
-secret_key = '' // Removed for security
+api_key_id = 'PKKSZY7HUXSG54X8GV2Q'
+secret_key = 'WdqcOFVTPoPYxzzV0q8UW76ad0rpcjfz0vEucaj5'
 
-api = tradeapi.REST(api_key_id, secret_key, base_url=base_endpoint)  # or use ENV Vars shown below
+api = tradeapi.REST(api_key_id, secret_key, base_url=base_endpoint)
 account = api.get_account()
 clock = api.get_clock()
 
@@ -33,6 +35,11 @@ commonNamesList = commonNamesDF.values.tolist()
 # Read in all tickers of brands from csvs
 commonTickersDF = pd.read_csv('sp500ticker.csv', encoding='ISO-8859-1')
 commonTickersList = commonTickersDF.values.tolist()
+# Create database and cursor to store order information in
+db = sqlite3.connect(":memory:")
+cursor = db.cursor()
+cursor.execute('CREATE TABLE orders(runcount INTEGER PRIMARY KEY, tickers TEXT, time TEXT, shares TEXT, price TEXT, side TEXT)')
+db.commit()
 # _____________________________________________________________________________________________________________________
 headers = {"Authorization": f"Bearer {bearerToken}"}
 data = {"ip": "1.1.2.3"}
@@ -47,9 +54,9 @@ print('It took ', time.time() - before_train_time, ' seconds to train the sentim
 while 1 == 1:
     clock = api.get_clock()
     is_market_open = clock.is_open
-    while is_market_open == True:  # Changed to False for after-hours testing
+    while is_market_open == True:
         try:
-            # Find out what time close will happen
+            # Find out what time close will happen - CALL CLOCK FEWER TIMES
             end_timer = time.time()
             if runcount == 0 or runcount == 1:
                 clock = api.get_clock()
@@ -62,7 +69,7 @@ while 1 == 1:
                 while is_market_open == True:
                     print("Market closing soon.  Closing positions.")
 
-                    order_stuff().close_all_positions()
+                    order_stuff().close_all_positions(runcount, cursor)
                     clock = api.get_clock()
                     is_market_open = clock.is_open
                     time.sleep(5)
@@ -109,7 +116,7 @@ while 1 == 1:
             for names in nameList:
                 names = names[0]
                 numberOfTweets = 100  # Up to 100, but does not always have data to take
-                searchEndpoint = f'https://api.twitter.com/1.1/search/tweets.json?q={names}&count={numberOfTweets}&lang=en&result_type=popular'  # change pfizer to company name after testing
+                searchEndpoint = f'https://api.twitter.com/1.1/search/tweets.json?q={names}&count={numberOfTweets}&lang=en&result_type=popular'
                 searchedTweets = requests.get(searchEndpoint, headers=headers).json()
 
                 tweetTexts = []
@@ -147,20 +154,21 @@ while 1 == 1:
                 if i == len(tickerList):
                     break
                 targetTicker = tickerList[i][0]
-                # totalSentiment = [0.5]# Use for testing ttttesting
                 if targetTicker not in portfolio_ticker_list:
                     if totalSentiment[i] > 0.1:
                         print(
                             f"{targetTicker} has surpassed the sentiment threshold to buy and is not in the "
                             f"portfolio. Attempting to buy {targetTicker}.")
-                        order_stuff().buying(targetTicker, portfolio_ticker_list)
+                        order_stuff().buying(targetTicker, portfolio_ticker_list, runcount, cursor)
                     if totalSentiment[i] < -0.65:  # Look for what targetTicker and totalSentiment are
                         print(
                             f"{targetTicker} has surpassed the sentiment threshold to short and is not in the "
                             f"portfolio. Attempting to short {targetTicker}.")
-                        order_stuff().shorting(targetTicker, portfolio_ticker_list)
+                        order_stuff().shorting(targetTicker, portfolio_ticker_list, runcount, cursor)
 
             # ---------------------------------------------------------------------------------------------------------
+            # Commit to the database
+            db.commit()
             print("My program took", time.time() - start_time, "to run for the", runcount, " time")
             if (time.time() - start_time) < 30:
                 print('sleeping until 30 seconds...')

@@ -91,8 +91,7 @@ while 1 == 1:
                     counterMeasure = counterMeasure + 1
                     # Split us_trends['trends'][i]['name'].lower() by space
                     subWords = us_trends['trends'][i]['name'].lower().split(' ')
-                    if term in subWords:  # or us_trends['trends'][i]['name'].lower().startswith(term): DON'T KNOW IF
-                        # I CAN GET THIS TO WORK PROPERLY
+                    if term in subWords:
                         counter = counter + 1
                         indexList.append(index)
                 index = index + 1
@@ -131,7 +130,7 @@ while 1 == 1:
                 tweetTexts2.append(tweetTexts)
 
             # tweetTexts is now a SENSIBLE list of all strings to be processed for
-            # sentiment----------------------------------------------------- Find the sentiment for the tweet texts
+            # Find the sentiment for the tweet texts
             totalSentiment = []
             length_of_tweetTexts = len(tweetTexts2)
             # Generate a list of tickers we have bought
@@ -147,9 +146,9 @@ while 1 == 1:
                     totalSentiment.append(execute_sentiment(tweetTexts2[i], classifier))
                     print(f'total sentiment is {totalSentiment}')
                     print('it took ', (time.time() - before_time), 'seconds to determine the sentiment of this topic')
+                    
             # We now have totalSentiment as a measure of the sentiment around that brand. Now we must place an order
             # based on the sentiment
-
             for i in range(0, len(tickerList)):
                 if i == len(tickerList):
                     break

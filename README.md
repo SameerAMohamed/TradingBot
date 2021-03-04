@@ -1,4 +1,4 @@
-#Trading Bot Based on Sentiment Analysis of Tweets
+# Trading Bot Based on Sentiment Analysis of Tweets
 
 The sp500name.csv file contains the names of all the companies watched
 The sp500ticker.csv file contains the names of all companies watched

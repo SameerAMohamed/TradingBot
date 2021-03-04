@@ -2,7 +2,8 @@
 # How it works:
 
 The program first trains a sentiment analysis model for the tweets and checks to see if the market is open. If the market is open, it requests all trending topics using the Twitter RESTful API, and checks to see if any companies appear on trending according to the list in sp500name.csv.
-Afterwards, the program searches Twitter for a mix of the most recent and most popular tweets, extracts the tweet strings, and transforms them into strings useful for sentiment analysis, and loads them into a list for each company.
+Afterwards, the program searches Twitter for the company and returns a mix of the most recent and most popular tweets. After, it extracts the tweet strings from the returned JSON, and transforms them into strings useful for sentiment analysis. Finally loads those strings into a list corresponding to each trending company.
+
 The strings associated with each company are then loaded into the sentiment analysis model, and the average of the sentiment for each tweet per company is then returned.
 If a companies' sentiment then exceeds a threshold, it is either bought or short-bought using the tickers in sp500ticker.csv and calling the Alpaca brokerage RESTful API.
 

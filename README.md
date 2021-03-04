@@ -1,6 +1,8 @@
 # Trading Bot Based on Sentiment Analysis of Tweets
 ## How it works:
+This is a complete project that I run a private version with my own API keys constantly on Heroku.
 
+To run, simply input API keys and run main.py.
 The program first trains a sentiment analysis model for the tweets and checks to see if the market is open. If the market is open, it requests all trending topics using the Twitter RESTful API, and checks to see if any companies appear on trending according to the list in sp500name.csv.
 Afterwards, the program searches Twitter for any company that appeared on trending and returns a mix of the most recent and most popular tweets for that company. After, it extracts the tweet strings from the returned JSON, and transforms them into strings useful for sentiment analysis. Finally loads those strings into a list corresponding to each trending company.
 
@@ -22,3 +24,7 @@ sentiment.py contains methods used for sentiment analysis.
 methods.py contains methods used for interacting with trading API.
 
 main.py is the main file and connects to the Twitter API.
+
+## Modules Used
+The current modules used are NumPy, Pandas, NLTK, Regex, SQLite3, Requests, Datetime, time, Random, and Alpaca Trade API.
+I am considering potentially incorporating Tensorflow in place of NLTK to see if I could improve the time to train the model.

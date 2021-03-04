@@ -5,7 +5,7 @@ The program first trains a sentiment analysis model for the tweets and checks to
 Afterwards, the program searches Twitter for any company that appeared on trending and returns a mix of the most recent and most popular tweets for that company. After, it extracts the tweet strings from the returned JSON, and transforms them into strings useful for sentiment analysis. Finally loads those strings into a list corresponding to each trending company.
 
 The strings associated with each company are then loaded into the sentiment analysis model, and the average of the sentiment for each tweet per company is then returned.
-If a companies' average sentiment then exceeds a threshold (positive or negative), it is either bought or short-sold using the tickers in sp500ticker.csv and calling the Alpaca brokerage RESTful API.
+If a companies' average sentiment then exceeds a threshold (positive or negative), it is either bought or short-sold using the tickers in sp500ticker.csv and calling the Alpaca brokerage RESTful API. When these orders are made, the resulting order will be stored in a NoSQL database using an SQL Query.
 
 This repeats until 5 minutes before the end of the trading day where it sends a request to close all positions. Once the trading day closes, the program sleeps until 5 minutes before opening where it begins to check every 5 seconds if the market is open.
 

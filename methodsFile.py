@@ -4,6 +4,10 @@ import threading
 import math
 
 class order_stuff:
+    '''
+    This class has functions that are used to do different types of orders
+    None of these return anything and are used to execure orders
+    '''
     def __init__(self):
         API_KEY = [API KEY]
         API_SECRET = [API KEY]
@@ -23,6 +27,9 @@ class order_stuff:
 
     # Make a method to close all positions
     def close_all_positions(self, runcount, cursor):
+    '''
+    This class is used to close all positition. Does not return anything.
+    '''    
         base_endpoint = 'https://paper-api.alpaca.markets'
         api_key_id = [API KEY]
         secret_key = [API KEY]
@@ -50,6 +57,9 @@ class order_stuff:
                 print("There was a problem closing the positions")
 
     def buying(self, targetTicker, portfolio_ticker_list, runcount, cursor):
+        '''
+        This class is used to buy a single stock out of a list of interesting tickers
+        '''
         if targetTicker not in portfolio_ticker_list:
             base_endpoint = 'https://paper-api.alpaca.markets'
             api_key_id = 'PKKSZY7HUXSG54X8GV2Q'
@@ -150,6 +160,9 @@ class order_stuff:
             print('Already invested in target security')
 
     def shorting(self, targetTicker, portfolio_ticker_list, runcount, cursor):
+        '''
+        This function shorts a stock given a list of potential stocks to short
+        '''
         if targetTicker not in portfolio_ticker_list:
             symbol = targetTicker
 

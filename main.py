@@ -193,12 +193,12 @@ while 1 == 1:
         else:
             sleep_time = 0.5
 
-        print('Market is not open... Checking again in ', x_time, ' seconds')
+        print('Market is not open... Checking again in ', sleep_time, ' seconds')
         clock = api.get_clock()
         is_market_open = clock.is_open
 
         # Sleep until allotted time and reset the runcount
-        time.sleep(x_time)
+        time.sleep(sleep_time)
         runcount = 0
         clock = api.get_clock()
         

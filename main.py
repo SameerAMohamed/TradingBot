@@ -11,7 +11,6 @@ from nltk.corpus import stopwords
 from methodsFile import order_stuff
 from sentiment import execute_sentiment, sentiment_analysis
 
-
 runcount = 1
 # twitter authentication
 key = [API KEY]
@@ -28,16 +27,22 @@ api = tradeapi.REST(api_key_id, secret_key, base_url=base_endpoint)
 account = api.get_account()
 clock = api.get_clock()
 
-# Read in all common names of brands from csvs
-commonNamesDF = pd.read_csv('sp500name.csv', encoding='ISO-8859-1')
-commonNamesList = commonNamesDF.values.tolist()
+# Read in all common names of brands from CSVs
+common_names_df = pd.read_csv('sp500name.csv', encoding='ISO-8859-1')
+common_names_list = common_names_df.values.tolist()
+
 # Read in all tickers of brands from csvs
 commonTickersDF = pd.read_csv('sp500ticker.csv', encoding='ISO-8859-1')
 commonTickersList = commonTickersDF.values.tolist()
+
+# Create a dictionary for the tickers:names
+company_dict = dict(zip(common_names_list, commonTickersList))
+
 # Create database and cursor to store order information in
 db = sqlite3.connect(":memory:")
 cursor = db.cursor()
-cursor.execute('CREATE TABLE orders(runcount INTEGER PRIMARY KEY, tickers TEXT, time TEXT, shares TEXT, price TEXT, side TEXT)')
+cursor.execute(
+    'CREATE TABLE orders(runcount INTEGER PRIMARY KEY, tickers TEXT, time TEXT, shares TEXT, price TEXT, side TEXT)')
 db.commit()
 # _____________________________________________________________________________________________________________________
 headers = {"Authorization": f"Bearer {bearerToken}"}
@@ -50,29 +55,31 @@ endpoint = f"https://api.twitter.com/1.1/trends/place.json?id={woid_us}"
 before_train_time = time.time()
 classifier = sentiment_analysis()
 print('It took ', time.time() - before_train_time, ' seconds to train the sentiment model.')
+
+# Run the body of the program
 while 1 == 1:
     clock = api.get_clock()
     is_market_open = clock.is_open
-    while is_market_open == True:
+    while is_market_open:
         try:
-            # Find out what time close will happen - CALL CLOCK FEWER TIMES
+            # Find out what time close will happen
             end_timer = time.time()
             if runcount == 0 or runcount == 1:
                 clock = api.get_clock()
-                closingTime = clock.next_close.replace(tzinfo=datetime.timezone.utc).timestamp()
-                currTime = clock.timestamp.replace(tzinfo=datetime.timezone.utc).timestamp()
-                timeToClose = closingTime - currTime
+                closing_time = clock.next_close.replace(tzinfo=datetime.timezone.utc).timestamp()
+                current_time = clock.timestamp.replace(tzinfo=datetime.timezone.utc).timestamp()
+                time_to_close = closing_time - current_time
                 start_timer = time.time()
             # Sell when it's 5 minutes to close
-            if (timeToClose - (end_timer - start_timer)) < (60 * 5) and timeToClose > 0:
-                while is_market_open == True:
+            if (time_to_close - (end_timer - start_timer)) < (60 * 5) and time_to_close > 0:
+                while is_market_open:
                     print("Market closing soon.  Closing positions.")
 
                     order_stuff().close_all_positions(runcount, cursor)
                     clock = api.get_clock()
                     is_market_open = clock.is_open
                     time.sleep(5)
-            if is_market_open == False:
+            if not is_market_open:
                 break
 
             start_time = time.time()
@@ -80,89 +87,85 @@ while 1 == 1:
             us_trends = us_trends[0]
             stop_words = stopwords.words('english')
 
-            counter = 0
-            counterMeasure = 0
-            index = 0
-            indexList = []
-            for term in commonNamesList:
+            # Find the names of the companies that are trending by checking if each company is trending within a list
+            # We have to iterate through each list instead of checking sets because the trend may contain the company
+            # name instead of matching the exact name
+
+            nameList = []  # List of names that are trending to be populated
+
+            for term in common_names_list:
                 term = term[0].lower()
-                for i in range(0, len(us_trends['trends'])):
-                    counterMeasure = counterMeasure + 1
-                    # Split us_trends['trends'][i]['name'].lower() by space
-                    subWords = us_trends['trends'][i]['name'].lower().split(' ')
-                    if term in subWords:
-                        counter = counter + 1
-                        indexList.append(index)
-                index = index + 1
+                for i in range(len(us_trends['trends'])):
+                    sub_words = us_trends['trends'][i]['name'].lower().split(' ')
+                    if term in sub_words:
+                        nameList.append(term)
 
-            # Filter out any replicates in indexList
-            indexList = list(dict.fromkeys(indexList))
+            # Filter out any replicates in nameList
+            nameList = list(dict.fromkeys(nameList))
 
-            tickerList = []
-            nameList = []
-            # We must identify each ticker for the company. We have organized the CSVs so they should have the same
-            # index
-            for placements in indexList:  # we generate tickerList which is a list of all the tickers that are trending
-                tickerList.append(commonTickersList[placements])
-                nameList.append(commonNamesList[placements])
+            # Now we use the dictionary to generate the ticker list
+            tickerList = [company_dict[name] for name in nameList]
 
             # Now that we have the indices of the companies that are trending, we must search for each,
-            # sample n tweets, and analyze them for sentiment We will parse tweets that are searched for into a list
+            # sample n tweets, and analyze them for sentiment. We will parse tweets that are searched for into a list
             # of strings before here sentiment.py will be used to analyze their sentiments
-            tweetTexts = []
-            tweetTexts2 = []
+
+            # Create a list of lists in tweet_texts_final
+            tweet_texts_final = []
             for names in nameList:
                 names = names[0]
                 numberOfTweets = 100  # Up to 100, but does not always have data to take
                 searchEndpoint = f'https://api.twitter.com/1.1/search/tweets.json?q={names}&count={numberOfTweets}&lang=en&result_type=popular'
                 searchedTweets = requests.get(searchEndpoint, headers=headers).json()
 
-                tweetTexts = []
-                for i in range(0, len(searchedTweets['statuses'][:]) - 1):
-                    tweetTexts.append(searchedTweets['statuses'][i]['text'])
+                # Get the text of the target tweets into a list
+                tweet_texts = [searchedTweets['statuses'][i]['text'] for i in
+                               range(len(searchedTweets['statuses'][:]) - 1)]
 
-                for i in range(0, len(tweetTexts)):
-                    tweetHolder = tweetTexts[i].split(': ')  # split into before and after the colon
+                for i in range(len(tweet_texts)):
+                    tweetHolder = tweet_texts[i].split(': ')  # split into before and after the colon
                     if len(tweetHolder) > 1:
-                        tweetTexts[i] = tweetHolder[1]
-                    tweetTexts[i] = re.sub('\W+', ' ', tweetTexts[i])
-                tweetTexts2.append(tweetTexts)
+                        tweet_texts[i] = tweetHolder[1]
+                    tweet_texts[i] = re.sub('\W+', ' ', tweet_texts[i])
 
-            # tweetTexts is now a SENSIBLE list of all strings to be processed for
-            # Find the sentiment for the tweet texts
-            totalSentiment = []
-            length_of_tweetTexts = len(tweetTexts2)
+                tweet_texts_final.append(tweet_texts)
+
+            # tweet_texts_final is now a SENSIBLE list of lists of all strings to be processed for
+            # sentiment----------------------------------------------------- Find the sentiment for the tweet texts
+
             # Generate a list of tickers we have bought
-            portfolio_ticker_list = []
             portfolio = api.list_positions()
-            for position in portfolio:
-                portfolio_ticker_list.append(position.symbol)
-            for i in range(0, len(tweetTexts2)):
+            portfolio_ticker_list = [position.symbol for position in portfolio]
+
+            total_sentiment = []
+            # Analyze sentiment of the tweets in tweet_texts_final and
+            for i in range(len(tweet_texts_final)):
                 ticker = tickerList[i][0]
-                if tickerList[i] not in portfolio_ticker_list:
+                if tickerList[i] not in portfolio_ticker_list:  # Avoid overwriting current orders
                     print(f'Calculating total sentiment for {tickerList[i]}...')
                     before_time = time.time()
-                    totalSentiment.append(execute_sentiment(tweetTexts2[i], classifier))
-                    print(f'total sentiment is {totalSentiment}')
+                    total_sentiment.append(execute_sentiment(tweet_texts_final[i], classifier))
+                    print(f'total sentiment is {total_sentiment}')
                     print('it took ', (time.time() - before_time), 'seconds to determine the sentiment of this topic')
-                    
-            # We now have totalSentiment as a measure of the sentiment around that brand. Now we must place an order
+
+            # We now have total_sentiment as a measure of the sentiment around that brand. Now we must place an order
             # based on the sentiment
-            for i in range(0, len(tickerList)):
-                if i == len(tickerList):
-                    break
+
+            for i in range(len(tickerList) - 1):
                 targetTicker = tickerList[i][0]
                 if targetTicker not in portfolio_ticker_list:
-                    if totalSentiment[i] > 0.1:
+                    if total_sentiment[i] > 0.1:
                         print(
                             f"{targetTicker} has surpassed the sentiment threshold to buy and is not in the "
                             f"portfolio. Attempting to buy {targetTicker}.")
                         order_stuff().buying(targetTicker, portfolio_ticker_list, runcount, cursor)
-                    if totalSentiment[i] < -0.65:  # Look for what targetTicker and totalSentiment are
+                    elif total_sentiment[i] < -0.65:  # Look for what targetTicker and totalSentiment are
                         print(
                             f"{targetTicker} has surpassed the sentiment threshold to short and is not in the "
                             f"portfolio. Attempting to short {targetTicker}.")
                         order_stuff().shorting(targetTicker, portfolio_ticker_list, runcount, cursor)
+                    else:
+                        print("The sentiment is not outstanding enough to place a trade.")
 
             # ---------------------------------------------------------------------------------------------------------
             # Commit to the database
@@ -172,29 +175,40 @@ while 1 == 1:
                 print('sleeping until 30 seconds...')
                 time.sleep(30 - (time.time() - start_time))
 
-            runcount = runcount + 1
+            runcount += 1
+
         except:
             print("There was an issue collecting or analyzing data. Sleeping for 10 seconds and retrying.")
             time.sleep(10)
-    while is_market_open == False:
-        openingTime = clock.next_open.replace(tzinfo=datetime.timezone.utc).timestamp()
-        currTime = clock.timestamp.replace(tzinfo=datetime.timezone.utc).timestamp()
-        timeToOpen = openingTime - currTime
 
+    # When the market is not open
+    else:
+        opening_time = clock.next_open.replace(tzinfo=datetime.timezone.utc).timestamp()
+        current_time = clock.timestamp.replace(tzinfo=datetime.timezone.utc).timestamp()
+        timeToOpen = opening_time - current_time
+
+        # Set time to sleep to 5 minutes, unless the market is about to open in 5 minutes in which case sleep for .5 sec
         if timeToOpen > 300:
-            x_time = timeToOpen - 300.01
+            sleep_time = timeToOpen - 300.01
         else:
-            x_time = 0.5
+            sleep_time = 0.5
+
         print('Market is not open... Checking again in ', x_time, ' seconds')
         clock = api.get_clock()
         is_market_open = clock.is_open
+
+        # Sleep until allotted time and reset the runcount
         time.sleep(x_time)
         runcount = 0
         clock = api.get_clock()
+        
+        # Check if market is open
         is_market_open = clock.is_open
+
         if timeToOpen < 0:
             is_market_open = True
-        if is_market_open == True:
+
+        if is_market_open:
             print("Market has opened")
         else:
             print("Market is not open")

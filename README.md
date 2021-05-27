@@ -16,7 +16,7 @@ The sp500name.csv file contains the names of all the companies watched.
 
 The sp500ticker.csv file contains the names of all companies watched.
 
-Note: These are not the SP500. The contain many high-profile companies from there though.
+Note: These are not the SP500. They contain many high-profile companies from there though.
 
 
 sentiment.py contains methods used for sentiment analysis.

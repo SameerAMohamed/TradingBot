@@ -62,8 +62,8 @@ class order_stuff:
         '''
         if targetTicker not in portfolio_ticker_list:
             base_endpoint = 'https://paper-api.alpaca.markets'
-            api_key_id = 'PKKSZY7HUXSG54X8GV2Q'
-            secret_key = 'WdqcOFVTPoPYxzzV0q8UW76ad0rpcjfz0vEucaj5'
+            api_key_id = [API KEY]
+            secret_key = [API KEY]
 
             api = tradeapi.REST(api_key_id, secret_key, base_url=base_endpoint)
 
